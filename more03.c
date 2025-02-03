@@ -42,7 +42,7 @@ int main( int ac , char *av[] )
  */
 int do_more( FILE *fp )
 {
-	int	space_left = get_terminal_height();		/* space left on screen */
+	int	space_left = get_terminal_height();		/* space left on screen - account for the more prompt*/
 	int	reply;				/* user request		*/
 	int rows_used;
 	FILE	*fp_tty;			/* stream to keyboard	*/
@@ -77,10 +77,10 @@ int print_one_line( FILE *fp )
 	int term_width = get_terminal_width();
 	int col_pos = 0;
 	
-	int max_rows = get_terminal_height()-1; //need to account for more at the end of the terminal.
+	int max_rows = get_terminal_height(); //get rows
 	int rows_used = 0;
 
-	while( ( c = getc(fp) ) != EOF && rows_used<max_rows){
+	while( ( c = getc(fp) ) != EOF && rows_used<=max_rows){
 		if(c== '\n'){
 			if(col_pos==0){		/* check for an empty line	*/
 				putchar('\n');
@@ -147,7 +147,7 @@ int how_much_more(FILE *fp)
 int get_terminal_height(){
 	int rows_cols[2];
 	if(get_term_size(rows_cols)==0){
-		return rows_cols[0];
+		return (rows_cols[0] -1); //account for more prompt
 	}
 	return -1;
 }

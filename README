@@ -20,6 +20,3 @@ Notes:
 
   I've also updated the print one line to return an integer value so the program can keep track of the numnber of rows used in the case of text wrapping so as to not exceed the terminal height. 
 
-  I've also updated my solution to clear the console. 
-
-
