@@ -77,7 +77,7 @@ int print_one_line( FILE *fp )
 	int term_width = get_terminal_width();
 	int col_pos = 0;
 	
-	int max_rows = get_terminal_height();
+	int max_rows = get_terminal_height()-1; //need to account for more at the end of the terminal.
 	int rows_used = 0;
 
 	while( ( c = getc(fp) ) != EOF && rows_used<max_rows){
