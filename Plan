@@ -25,6 +25,9 @@ what to do, reads a keystroke from the user.  Depending on the key pressed,
 the program quits, shows one more line of text, or shows one more screenful
 of text, then asks again.
 
+For implementing displaying the percentage of the files, I would implement a helper function that would return the percentage of the file displayed. This would be called in the how_much_more function after a terminal height of input had been displayed. 
+This function could use the fseek and ftell functions to calculate the total size of the file, and the ftell to get the current position of the character pointer. It would then perform the division and return the value. I would update the more? display to print the value. 
+
 Layering:
 
 	main ,for each file, calls:
