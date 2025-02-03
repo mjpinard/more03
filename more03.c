@@ -15,7 +15,7 @@
 
 int  do_more(FILE *);
 int  how_much_more(FILE *);
-void print_one_line(FILE *);
+int print_one_line(FILE *);
 int get_terminal_height();
 int get_terminal_width();
 
@@ -44,7 +44,13 @@ int do_more( FILE *fp )
 {
 	int	space_left = get_terminal_height();		/* space left on screen */
 	int	reply;				/* user request		*/
+	int rows_used;
 	FILE	*fp_tty;			/* stream to keyboard	*/
+
+	//error handling for get_terminal_height
+	if(space_left==-1){
+		return ERROR;
+	}
 
 	fp_tty = fopen( CTL_DEV, "r" );		/* connect to keyboard	*/
 	while ( has_more_data( fp ) ) {		/* more input	*/
@@ -56,21 +62,49 @@ int do_more( FILE *fp )
 			}		
 			space_left = reply;		/* reset count	*/
 		}
-		print_one_line( fp );
-		space_left--;				/* count it	*/
+		rows_used = print_one_line( fp );
+		space_left = space_left-rows_used;				/* update the number of rows used by one line of the input file. 	*/
 	}
 	fclose( fp_tty );			/* disconnect keyboard	*/
 	return SUCCESS;				/* EOF => done		*/
 }
 
-/*  print_one_line(fp) -- copy data from input to stdout until \n or EOF */
-void print_one_line( FILE *fp )
+/*  print_one_line(fp) -- copy data from input to stdout until \n or EOF or the number of rows in the terminal has been reached*/
+// returns the number of rows used so to not print more than the number of rows available in the terminal
+int print_one_line( FILE *fp )
 {
 	int	c;
+	int term_width = get_terminal_width();
+	int col_pos = 0;
+	
+	int max_rows = get_terminal_height();
+	int rows_used = 0;
 
-	while( ( c = getc(fp) ) != EOF && c != '\n' )
-		putchar( c ) ;
-	putchar('\n');
+	while( ( c = getc(fp) ) != EOF && rows_used<max_rows){
+		if(c== '\n'){
+			if(col_pos==0){		/* check for an empty line	*/
+				putchar('\n');
+				rows_used++;
+			}
+			break;
+		}
+		putchar(c);
+		col_pos++;
+
+		if(col_pos>=term_width){	/* If column position exceeds terminal width, print a new line	*/
+			putchar('\n');
+			col_pos=0;
+			rows_used++;
+		}
+	}
+
+	if(col_pos>0){				/* if not a newline do a carriage return	*/
+		putchar('\n');
+		rows_used++;
+	}
+
+	return rows_used;
+
 }
 
 /*  how_much_more -- ask user how much more to show
@@ -99,12 +133,17 @@ int how_much_more(FILE *fp)
 			user_selection= 1;
 			break;
 		}
-	
 	}
 	printf("\033[2K\r"); // Clear the more prompt
 	return user_selection;
 }
 
+/*
+ * get_terminal_height -- returns #rows in the terminal by calling the get_term_size function
+ *     args: none
+ *     rets: number of rows of the terminal, -1 if error
+ *     note: 
+ */
 int get_terminal_height(){
 	int rows_cols[2];
 	if(get_term_size(rows_cols)==0){
@@ -112,6 +151,13 @@ int get_terminal_height(){
 	}
 	return -1;
 }
+
+/*
+ * get_terminal_width -- returns #columns in the terminal by calling the get_term_size function
+ *     args: none
+ *     rets: number of columns of the terminal, -1 if error
+ *     note: 
+ */
 int get_terminal_width(){
 	int rows_cols[2];
 	if(get_term_size(rows_cols)==0){

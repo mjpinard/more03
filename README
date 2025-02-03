@@ -15,4 +15,11 @@ Summary:
 
 Notes:
 
-  put any notes for the grader/reader here
+  I've updated my solution to fix the following bug - if the user types q while main is parsing all but the last file, the program will continue to process 
+  the files. When the user quits, it will now exit the loop in main. 
+
+  I've also updated the print one line to return an integer value so the program can keep track of the numnber of rows used in the case of text wrapping so as to not exceed the terminal height. 
+
+  I've also updated my solution to clear the console. 
+
+
