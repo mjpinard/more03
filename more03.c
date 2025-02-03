@@ -9,12 +9,15 @@
 #define  PAGELEN	24
 #define  ERROR		1
 #define  SUCCESS	0
+#define  EXIT_PROGRAM	2
 #define  has_more_data(x)   (!feof(x))
 #define	CTL_DEV	"/dev/tty"		/* source of control commands	*/
 
 int  do_more(FILE *);
 int  how_much_more(FILE *);
 void print_one_line(FILE *);
+int get_terminal_height();
+int get_terminal_width();
 
 int main( int ac , char *av[] )
 {
@@ -39,7 +42,7 @@ int main( int ac , char *av[] )
  */
 int do_more( FILE *fp )
 {
-	int	space_left = PAGELEN ;		/* space left on screen */
+	int	space_left = get_terminal_height();		/* space left on screen */
 	int	reply;				/* user request		*/
 	FILE	*fp_tty;			/* stream to keyboard	*/
 
@@ -47,8 +50,10 @@ int do_more( FILE *fp )
 	while ( has_more_data( fp ) ) {		/* more input	*/
 		if ( space_left <= 0 ) {		/* screen full?	*/
 			reply = how_much_more(fp_tty);	/* ask user	*/
-			if ( reply == 0 )		/*    n: done   */
-				break;
+			if ( reply == 0 ){
+				fclose( fp_tty );		/* disconnect keyboard	*/
+				return EXIT_PROGRAM;	/* exit method and return value to stop processing all inputs	*/
+			}		
 			space_left = reply;		/* reset count	*/
 		}
 		print_one_line( fp );
@@ -76,16 +81,41 @@ void print_one_line( FILE *fp )
 int how_much_more(FILE *fp)
 {
 	int	c;
+	int term_height = get_terminal_height(); /* get terminal height if re-sized	*/
+	int user_selection =0;
 
 	printf("\033[7m more? \033[m");		/* reverse on a vt100	*/
-	while( (c = getc(fp)) != EOF )		/* get user input	*/
+	while( (c = rawgetc(fp)) != EOF )		/* get user input	*/
 	{
-		if ( c == 'q' )			/* q -> N		*/
-			return 0;
-		if ( c == ' ' )			/* ' ' => next page	*/
-			return PAGELEN;		/* how many to show	*/
-		if ( c == '\n' )		/* Enter key => 1 line	*/
-			return 1;		
+		if ( c == 'q' )	{		/* q -> N		*/
+			user_selection= 0;
+			break;
+		}
+		if ( c == ' ' ){			/* ' ' => next page	*/
+			user_selection= term_height;		/* how many to show	*/
+			break;
+		}
+		if ( c == '\n' ){		/* Enter key => 1 line	*/
+			user_selection= 1;
+			break;
+		}
+	
 	}
-	return 0;
+	printf("\033[2K\r"); // Clear the more prompt
+	return user_selection;
+}
+
+int get_terminal_height(){
+	int rows_cols[2];
+	if(get_term_size(rows_cols)==0){
+		return rows_cols[0];
+	}
+	return -1;
+}
+int get_terminal_width(){
+	int rows_cols[2];
+	if(get_term_size(rows_cols)==0){
+		return rows_cols[1];
+	}
+	return -1;
 }
